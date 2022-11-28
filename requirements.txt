@@ -10,8 +10,6 @@ git+https://github.com/vanderschaarlab/Interpretability # Replace with PYPI name
 # Other packages
 beautifulsoup4>=4.11.1
 dill>=0.3.6
-# invase>=0.0.3
-# lfxai>=0.1.1
 matplotlib>=3.5.3
 matplotlib-inline>=0.1.6
 numpy>=1.22.4
@@ -27,5 +25,4 @@ termcolor>=2.0.1
 torch>=1.12.1
 torchvision>=0.13.1
 tqdm>=4.64.1
-typing_extensions @ file:///tmp/abs_ben9emwtky/croots/recipe/typing_extensions_1659638822008/work
 xgboost>=1.6.2
