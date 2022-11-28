@@ -4,13 +4,9 @@ import os
 import streamlit as st
 import pandas as pd
 import torch
-
 import dill as pkl
 
-sys.path.append(os.path.abspath("src/interpretability"))
-sys.path.append(os.path.abspath("src"))
-# from interpretability_models import shap_explainer
-from interpretability_models.utils import data, io
+from interpretability.interpretability_models.utils import data, io
 
 # from models.multilayer_perceptron import IrisMLP
 
@@ -47,16 +43,16 @@ with preloaded_tab:
         #     "wine": "resources/saved_explainers/shap/wine_simplex_explainer.p",
         # },
         "Linear": {
-            "iris": "resources/saved_explainers/shap/iris_shap_linear_explainer.p",
-            "wine": "resources/saved_explainers/shap/wine_shap_linear_explainer.p",
+            "iris": "resources/saved_explainers/shap/iris_shap_linear_explainer_4.p",
+            "wine": "resources/saved_explainers/shap/wine_shap_linear_explainer_4.p",
         },
         "Kernel": {
-            "iris": "resources/saved_explainers/shap/iris_shap_kernel_explainer.p",
-            "wine": "resources/saved_explainers/shap/wine_shap_kernel_explainer.p",
+            "iris": "resources/saved_explainers/shap/iris_shap_kernel_explainer_4.p",
+            "wine": "resources/saved_explainers/shap/wine_shap_kernel_explainer_4.p",
         },
         "Tree": {
-            "iris": "resources/saved_explainers/shap/iris_shap_tree_explainer.p",
-            "wine": "resources/saved_explainers/shap/wine_shap_tree_explainer.p",
+            "iris": "resources/saved_explainers/shap/iris_shap_tree_explainer_4.p",
+            "wine": "resources/saved_explainers/shap/wine_shap_tree_explainer_4.p",
         },
     }
 

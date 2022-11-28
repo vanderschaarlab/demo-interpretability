@@ -1,16 +1,12 @@
 import sys
+import re
 import os
 import streamlit as st
 import numpy as np
-import joblib
-import pickle as pkl
 import dill as pkl
 
 
-sys.path.append(os.path.abspath("src/interpretability"))
-sys.path.append(os.path.abspath("src"))
-from interpretability_models import symbolic_pursuit_explainer
-from interpretability_models.utils import data, io
+from interpretability.interpretability_models.utils import data, io
 
 st.set_page_config(
     page_title="Interpretability Suite",
@@ -45,10 +41,10 @@ with preloaded_tab:
     # Load the explainer
     sym_pursuit_paths = {
         "Linear": {
-            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer.p",
+            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer_4.p",
         },  # TODO: Update with new version (needs running)
         "Multi-Layer Perceptron": {
-            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer.p",
+            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer_4.p",
         },  # TODO: Update with new version that is running
     }
     my_explainer = io.load_explainer(sym_pursuit_paths[model][dataset])
@@ -65,13 +61,18 @@ with preloaded_tab:
     temp_projections_output = os.path.abspath(
         "resources/saved_explainers/symbolic_pursuit/temp_images/symbolic_pursuit_projections.png"
     )
+    str_projections = my_explainer.symbolic_model.string_projections()
+    str_projections = re.split(r"\s(?=P\d \=)", str_projections)
+    print(str_projections)
 
-    st.write("Symbolic Pursuit Output")
+    st.write("### Symbolic Pursuit Output")
 
-    st.write("Symbolic Expression of the model:")
+    st.write("**Symbolic Expression of the model:**")
     st.image(temp_expression_output, width=600)
-    st.write("Projections in the Symbolic Expression:")
-    st.image(temp_projections_output)
+    st.write("**Projections in the Symbolic Expression:**")
+    for projection in str_projections:
+        st.write(projection)
+    # st.image(temp_projections_output)
 
     st.write("### Predict:")
     st.write("Inputs:")

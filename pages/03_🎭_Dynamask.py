@@ -6,10 +6,7 @@ import dill as pkl
 import torch
 
 
-sys.path.append(os.path.abspath("src/interpretability"))
-sys.path.append(os.path.abspath("src"))
-from interpretability_models import dynamask_explainer
-from interpretability_models.utils import data, io
+from interpretability.interpretability_models.utils import data, io
 
 st.set_page_config(
     page_title="Interpretability Suite",
@@ -50,7 +47,7 @@ with preloaded_tab:
     # Load the explainer
     dynamask_paths = {
         "Convolutional Net": {
-            "Engine Noise": "resources/saved_explainers/dynamask/forda_conv_dynamask_explainer.p",
+            "Engine Noise": "resources/saved_explainers/dynamask/forda_conv_dynamask_explainer_4.p",
         },
     }
     my_explainer = io.load_explainer(dynamask_paths[model][dataset])
@@ -59,7 +56,7 @@ with preloaded_tab:
     explain_id = st.slider(
         "Test record:",
         0,
-        my_explainer.all_data.shape[0],
+        my_explainer.all_data.shape[0] - 1,
         0,
         key="explain_id_slider_preload",
     )
@@ -68,19 +65,19 @@ with preloaded_tab:
     # Parameters for explain
     slider_col1, slider_col2, *other_cols = st.columns(4)
     with slider_col1:
-        features_displayed = st.slider(
+        features_displayed_start, features_displayed_stop = st.slider(
             "Features Displayed:",
             0,
             my_explainer.explain_data.shape[1],
-            my_explainer.explain_data.shape[1],
+            (0, my_explainer.explain_data.shape[1]),
             key="features_displayed_slider_preload",
         )
     with slider_col2:
-        times_displayed = st.slider(
+        times_displayed_start, times_displayed_stop = st.slider(
             "Time steps Displayed:",
             0,
             my_explainer.explain_data.shape[0],
-            my_explainer.explain_data.shape[0],
+            (0, my_explainer.explain_data.shape[0]),
             key="times_displayed_slider_preload",
         )
     smooth_mask = st.checkbox(
@@ -88,8 +85,8 @@ with preloaded_tab:
     )
 
     my_explainer.explain(
-        ids_feature=list(range(features_displayed)),
-        ids_time=list(range(times_displayed)),
+        ids_feature=list(range(features_displayed_start, features_displayed_stop)),
+        ids_time=list(range(times_displayed_start, times_displayed_stop)),
         smooth=smooth_mask,
         get_mask_from_group_method="extremal",
         extremal_mask_threshold=0.01,

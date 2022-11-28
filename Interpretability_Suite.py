@@ -63,8 +63,8 @@ st.write("")
 st.write("### Method Selection")
 
 st.image(
-    "https://github.com/vanderschaarlab/Interpretability/images/Interpretability_method_flow_diagram.png",
-    width=800,
+    "images/Interpretability_method_flow_diagram.svg",
+    width=10,
 )
 st.write("*Fig 1: A flow chart to aid interpretability method selection.*")
 st.markdown("""---""")

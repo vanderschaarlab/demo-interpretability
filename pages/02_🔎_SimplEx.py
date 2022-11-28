@@ -6,12 +6,9 @@ import numpy as np
 import pandas as pd
 import dill as pkl
 
-sys.path.append(os.path.abspath("src/interpretability"))
-sys.path.append(os.path.abspath("src"))
-from interpretability_models import simplex_explainer
-from interpretability_models.utils import data, io
 
-# from models.multilayer_perceptron import IrisMLP
+from interpretability.interpretability_models import simplex_explainer
+from interpretability.interpretability_models.utils import data, io
 
 # Page Config
 st.set_page_config(
@@ -234,18 +231,18 @@ with preloaded_tab:
     if data_type == "Tabular":
         simplex_paths = {
             "MLP": {
-                "iris": "resources/saved_explainers/simplex/tabular/iris_mlp_simplex_explainer_3.p",
-                "wine": "resources/saved_explainers/simplex/tabular/wine_mlp_simplex_explainer_3.p",
+                "iris": "resources/saved_explainers/simplex/tabular/iris_mlp_simplex_explainer_4.p",
+                "wine": "resources/saved_explainers/simplex/tabular/wine_mlp_simplex_explainer_4.p",
             },
             "Linear": {
-                "iris": "resources/saved_explainers/simplex/tabular/iris_linear_simplex_explainer_3.p",
-                "wine": "resources/saved_explainers/simplex/tabular/wine_linear_simplex_explainer_3.p",
+                "iris": "resources/saved_explainers/simplex/tabular/iris_linear_simplex_explainer_4.p",
+                "wine": "resources/saved_explainers/simplex/tabular/wine_linear_simplex_explainer_4.p",
             },
         }
     else:
         simplex_paths = {
             "Convolutional Net": {
-                "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_conv_time_simplex_explainer_2.p",
+                "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_conv_time_simplex_explainer_4.p",
             },
             "GRU": {
                 "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_gru_time_simplex_explainer.p",
