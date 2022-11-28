@@ -1,4 +1,5 @@
 # Imports
+# Standard
 import sys
 import os
 import streamlit as st
@@ -6,6 +7,7 @@ import pandas as pd
 import torch
 import dill as pkl
 
+# Interpretability
 from interpretability.interpretability_models.utils import data, io
 
 # from models.multilayer_perceptron import IrisMLP

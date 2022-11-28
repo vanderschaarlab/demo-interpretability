@@ -1,12 +1,14 @@
 # Imports
+# Standard
 import sys
 import os
 import streamlit as st
 import numpy as np
 import pandas as pd
 import dill as pkl
+import sklearn
 
-
+# Interpretability
 from interpretability.interpretability_models import simplex_explainer
 from interpretability.interpretability_models.utils import data, io
 
@@ -55,7 +57,6 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
             ],
         )
     )
-
     # Write test record to app
     st.write("### Test Record")
     st.write(test_record_df.transpose())
@@ -248,8 +249,9 @@ with preloaded_tab:
                 "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_gru_time_simplex_explainer.p",
             },  # TODO: Train this model and save the explainer before implementing
         }
-
+    st.write("before")
     my_explainer = io.load_explainer(simplex_paths[model][dataset])
+    st.write("after")
 
     my_explainer.explain(test_example_id, baseline="median")
 

@@ -1,3 +1,5 @@
+# Imports
+# Standard
 import sys
 import re
 import os
@@ -5,7 +7,7 @@ import streamlit as st
 import numpy as np
 import dill as pkl
 
-
+# Interpretability
 from interpretability.interpretability_models.utils import data, io
 
 st.set_page_config(
