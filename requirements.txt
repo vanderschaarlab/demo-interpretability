@@ -2,7 +2,7 @@
 git+https://github.com/vanderschaarlab/Interpretability # Replace with PYPI name when published
 
 # # Interpretability methods
-# dynamask>=0.0.1
+dynamask>=0.0.1
 # shap>=0.41.0
 # simplexai>=0.0.2
 # symbolic-pursuit>=0.0.1
