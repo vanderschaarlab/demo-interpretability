@@ -46,8 +46,8 @@ with preloaded_tab:
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer_4.p",
         },  # TODO: Update with new version (needs running)
         "Multi-Layer Perceptron": {
-            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer_4.p",
-        },  # TODO: Update with new version that is running
+            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_mlp_explainer_4.p",
+        },  # TODO: Update with new version (needs running)
     }
     my_explainer = io.load_explainer(sym_pursuit_paths[model][dataset])
 

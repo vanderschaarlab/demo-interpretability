@@ -1,5 +1,5 @@
 # The interpretability Suite
-git+https://github.com/vanderschaarlab/Interpretability # Replace with PYPI name when published
+git+https://github.com/vanderschaarlab/Interpretability@interpretability_suite_app # Replace with PYPI name when published
 
 # # Interpretability methods
 dynamask>=0.0.1
