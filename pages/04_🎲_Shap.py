@@ -31,7 +31,9 @@ with preloaded_tab:
             key="model_type_select",
         )
     with select_box_col2:
-        dataset_options = ["iris", "wine"]
+        dataset_options = (
+            ["iris", "wine"] if model_type != "Kernel" else "iris"
+        )  # remove if after re-train kernel
         dataset = st.selectbox(
             label="Dataset:",
             options=dataset_options,

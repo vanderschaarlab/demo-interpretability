@@ -9,15 +9,16 @@ dynamask>=0.0.1
 
 # Other packages
 beautifulsoup4>=4.11.1
+captum~=0.4.0
 dill>=0.3.6
 matplotlib>=3.5.3
 matplotlib-inline>=0.1.6
 numpy>=1.22.4
-pandas>=1.3.5
+pandas~=1.3.3
 pydot>=1.4.2
 scikit-learn==0.24.2
 scipy>=1.8.1
-seaborn>=0.11.2
+seaborn~=0.11.2
 sktime>=0.13.2
 streamlit-extras>=0.1.5
 sympy>=1.6.2
