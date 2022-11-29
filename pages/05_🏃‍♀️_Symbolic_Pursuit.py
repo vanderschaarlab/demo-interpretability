@@ -46,23 +46,13 @@ with preloaded_tab:
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer_4.p",
         },  # TODO: Update with new version (needs running)
         "Multi-Layer Perceptron": {
-            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_mlp_explainer_4.p",
+            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer_4.p",
         },  # TODO: Update with new version (needs running)
     }
     my_explainer = io.load_explainer(sym_pursuit_paths[model][dataset])
 
     my_explainer.explain()
 
-    my_explainer.summary_plot(
-        show=False,
-        save_folder="resources/saved_explainers/symbolic_pursuit/temp_images",
-    )
-    temp_expression_output = os.path.abspath(
-        "resources/saved_explainers/symbolic_pursuit/temp_images/symbolic_pursuit_expression.png"
-    )
-    temp_projections_output = os.path.abspath(
-        "resources/saved_explainers/symbolic_pursuit/temp_images/symbolic_pursuit_projections.png"
-    )
     str_projections = my_explainer.symbolic_model.string_projections()
     str_projections = re.split(r"\s(?=P\d \=)", str_projections)
     print(str_projections)
@@ -70,7 +60,8 @@ with preloaded_tab:
     st.write("### Symbolic Pursuit Output")
 
     st.write("**Symbolic Expression of the model:**")
-    st.image(temp_expression_output, width=600)
+    # st.image(temp_expression_output, width=600)
+    st.latex(my_explainer.explanation.expression)
     st.write("**Projections in the Symbolic Expression:**")
     for projection in str_projections:
         st.write(projection)
@@ -157,31 +148,22 @@ with upload_tab:
         "Upload explainer:", key="tabular_explainer_uploader"
     )
     if uploaded_explainer:
+
         # Load the explainer
         my_explainer = pkl.load(uploaded_explainer)
+        my_explainer.explain()
 
-        @st.cache
-        def explain_and_plot(explainer):
-            explainer.explain()
-            my_explainer.summary_plot(
-                show=False,
-                save_folder="resources/saved_explainers/symbolic_pursuit/temp_images",
-            )
-
-        explain_and_plot(my_explainer)
-        temp_expression_output = os.path.abspath(
-            "resources/saved_explainers/symbolic_pursuit/temp_images/symbolic_pursuit_expression.png"
-        )
-        temp_projections_output = os.path.abspath(
-            "resources/saved_explainers/symbolic_pursuit/temp_images/symbolic_pursuit_projections.png"
-        )
+        str_projections = my_explainer.symbolic_model.string_projections()
+        str_projections = re.split(r"\s(?=P\d \=)", str_projections)
+        print(str_projections)
 
         st.write("### Symbolic Pursuit Output")
 
-        st.write("Symbolic Expression of the model:")
-        st.image(temp_expression_output, width=600)
-        st.write("Projections in the Symbolic Expression:")
-        st.image(temp_projections_output)
+        st.write("**Symbolic Expression of the model:**")
+        st.latex(my_explainer.explanation.expression)
+        st.write("**Projections in the Symbolic Expression:**")
+        for projection in str_projections:
+            st.write(projection)
 
         st.write("### Predict:")
         st.write("Inputs:")
@@ -191,7 +173,7 @@ with upload_tab:
             with col:
                 feature = st.number_input(
                     f"{my_explainer.feature_names[i]}",
-                    value=float(np.median(my_explainer.X_explain, axis=0)[i]),
+                    value=0.0,
                     key=f"{my_explainer.feature_names[i]}_input_val_uploaded",
                 )  # Feature_names must be passed to the explainer to be used in this interface
         inputs_to_predict = np.array(

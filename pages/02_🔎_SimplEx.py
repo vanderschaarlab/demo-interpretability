@@ -249,9 +249,7 @@ with preloaded_tab:
                 "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_gru_time_simplex_explainer.p",
             },  # TODO: Train this model and save the explainer before implementing
         }
-    st.write("before")
     my_explainer = io.load_explainer(simplex_paths[model][dataset])
-    st.write("after")
 
     my_explainer.explain(test_example_id, baseline="median")
 
