@@ -78,11 +78,11 @@ with preloaded_tab:
             )
     else:
 
-        my_explainer = io.load_explainer(shap_paths[model_type][dataset])
+        my_shap_explainer = io.load_explainer(shap_paths[model_type][dataset])
 
-        # my_explainer.explain()
+        # my_shap_explainer.explain()
 
-        my_explainer.summary_plot(
+        my_shap_explainer.summary_plot(
             show=False, save_path="resources/saved_explainers/shap/temp_shap_plot.png"
         )
 
@@ -97,9 +97,9 @@ with upload_tab:
     )
     if uploaded_explainer:
         # Load the explainer
-        my_explainer = pkl.load(uploaded_explainer)
+        my_shap_explainer = pkl.load(uploaded_explainer)
 
-        my_explainer.summary_plot(
+        my_shap_explainer.summary_plot(
             show=False, save_path="resources/saved_explainers/shap/temp_shap_plot.png"
         )
 

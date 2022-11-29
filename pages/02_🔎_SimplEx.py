@@ -20,7 +20,9 @@ st.set_page_config(
 )
 
 # Demo util functions
-def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7):
+def write_time_series_explaination_to_app(
+    my_simplex_explainer, time_steps_to_display=7
+):
     def highlight(x):
         return pd.DataFrame(
             importance_df_colors.values, index=x.index, columns=x.columns
@@ -29,19 +31,19 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
     example_importance_threshold = 0.05
 
     test_record_last_time_step = (
-        my_explainer.explanation.test_record[
-            ~np.all(my_explainer.explanation.test_record == 0, axis=1)
+        my_simplex_explainer.explanation.test_record[
+            ~np.all(my_simplex_explainer.explanation.test_record == 0, axis=1)
         ].shape[0]
         - 1
     )
     test_record_df = (
         pd.DataFrame(
-            my_explainer.explanation.test_record[
+            my_simplex_explainer.explanation.test_record[
                 test_record_last_time_step
                 - (time_steps_to_display - 1) : test_record_last_time_step
                 + 1,
             ],
-            columns=my_explainer.feature_names,
+            columns=my_simplex_explainer.feature_names,
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)"
                 for i in reversed(range(time_steps_to_display))
@@ -49,8 +51,10 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
         )
         if time_steps_to_display <= test_record_last_time_step
         else pd.DataFrame(
-            my_explainer.explanation.test_record[0 : test_record_last_time_step + 1],
-            columns=my_explainer.feature_names,
+            my_simplex_explainer.explanation.test_record[
+                0 : test_record_last_time_step + 1
+            ],
+            columns=my_simplex_explainer.feature_names,
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)"
                 for i in reversed(range(test_record_last_time_step + 1))
@@ -64,59 +68,59 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
 
     # Corpus Feature values
     last_time_step_idx = [
-        my_explainer.explanation.corpus_breakdown[j][
-            ~np.all(my_explainer.explanation.corpus_breakdown[j] == 0, axis=1)
+        my_simplex_explainer.explanation.corpus_breakdown[j][
+            ~np.all(my_simplex_explainer.explanation.corpus_breakdown[j] == 0, axis=1)
         ].shape[0]
         - 1
-        for j in range(len(my_explainer.explanation.corpus_breakdown))
+        for j in range(len(my_simplex_explainer.explanation.corpus_breakdown))
     ]
 
     corpus_dfs = [
         pd.DataFrame(
-            my_explainer.explanation.corpus_breakdown[j][
+            my_simplex_explainer.explanation.corpus_breakdown[j][
                 idx - (time_steps_to_display - 1) : idx + 1
             ],
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)"
                 for i in reversed(range(time_steps_to_display))
             ],
-            columns=my_explainer.feature_names,
+            columns=my_simplex_explainer.feature_names,
         )
         if time_steps_to_display <= idx
         else pd.DataFrame(
-            my_explainer.explanation.corpus_breakdown[j][0 : idx + 1],
+            my_simplex_explainer.explanation.corpus_breakdown[j][0 : idx + 1],
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)" for i in reversed(range(idx))
             ],
-            columns=my_explainer.feature_names,
+            columns=my_simplex_explainer.feature_names,
         )
         for j, idx in zip(
-            range(len(my_explainer.explanation.corpus_breakdown)),
+            range(len(my_simplex_explainer.explanation.corpus_breakdown)),
             last_time_step_idx,
         )
     ]
     # Patient importances
     importance_dfs = [
         pd.DataFrame(
-            my_explainer.explanation.feature_importances[j][
+            my_simplex_explainer.explanation.feature_importances[j][
                 idx - (time_steps_to_display - 1) : idx + 1
             ],
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)"
                 for i in reversed(range(time_steps_to_display))
             ],
-            columns=[f"{col}_fi" for col in my_explainer.feature_names],
+            columns=[f"{col}_fi" for col in my_simplex_explainer.feature_names],
         )
         if time_steps_to_display <= idx
         else pd.DataFrame(
-            my_explainer.explanation.feature_importances[j][0 : idx + 1],
+            my_simplex_explainer.explanation.feature_importances[j][0 : idx + 1],
             index=[
                 f"(t_max) - {i}" if i != 0 else "(t_max)" for i in reversed(range(idx))
             ],
-            columns=[f"{col}_fi" for col in my_explainer.feature_names],
+            columns=[f"{col}_fi" for col in my_simplex_explainer.feature_names],
         )
         for j, idx in zip(
-            range(len(my_explainer.explanation.feature_importances)),
+            range(len(my_simplex_explainer.explanation.feature_importances)),
             last_time_step_idx,
         )
     ]
@@ -125,13 +129,16 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
         {
             "feature_vals": corpus_dfs[i].transpose(),
             "Label": simplex_explainer.apply_sort_order(
-                my_explainer.corpus_targets, my_explainer.explanation.sort_order
+                my_simplex_explainer.corpus_targets,
+                my_simplex_explainer.explanation.sort_order,
             )[i],
             "Prediction": simplex_explainer.apply_sort_order(
-                my_explainer.corpus_predictions,
-                my_explainer.explanation.sort_order,
+                my_simplex_explainer.corpus_predictions,
+                my_simplex_explainer.explanation.sort_order,
             )[i],
-            "Example Importance": my_explainer.explanation.corpus_importances[i],
+            "Example Importance": my_simplex_explainer.explanation.corpus_importances[
+                i
+            ],
         }
         for i in range(len(corpus_dfs))
     ]
@@ -139,13 +146,16 @@ def write_time_series_explaination_to_app(my_explainer, time_steps_to_display=7)
         {
             "importance_vals": importance_dfs[i].transpose(),
             "Label": simplex_explainer.apply_sort_order(
-                my_explainer.corpus_targets, my_explainer.explanation.sort_order
+                my_simplex_explainer.corpus_targets,
+                my_simplex_explainer.explanation.sort_order,
             )[i],
             "Prediction": simplex_explainer.apply_sort_order(
-                my_explainer.corpus_predictions,
-                my_explainer.explanation.sort_order,
+                my_simplex_explainer.corpus_predictions,
+                my_simplex_explainer.explanation.sort_order,
             )[i],
-            "Example Importance": my_explainer.explanation.corpus_importances[i],
+            "Example Importance": my_simplex_explainer.explanation.corpus_importances[
+                i
+            ],
         }
         for i in range(len(corpus_dfs))
     ]
@@ -249,12 +259,12 @@ with preloaded_tab:
                 "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_gru_time_simplex_explainer.p",
             },  # TODO: Train this model and save the explainer before implementing
         }
-    my_explainer = io.load_explainer(simplex_paths[model][dataset])
+    my_simplex_explainer = io.load_explainer(simplex_paths[model][dataset])
 
-    my_explainer.explain(test_example_id, baseline="median")
+    my_simplex_explainer.explain(test_example_id, baseline="median")
 
     if data_type == "Tabular":
-        explain_record_df, display_corpus_df = my_explainer.summary_plot(
+        explain_record_df, display_corpus_df = my_simplex_explainer.summary_plot(
             output_file_prefix="my_output",
             open_in_browser=False,
             return_type="styled_df",
@@ -268,7 +278,7 @@ with preloaded_tab:
         st.write(display_corpus_df)
 
     elif data_type == "Time Series":
-        write_time_series_explaination_to_app(my_explainer)
+        write_time_series_explaination_to_app(my_simplex_explainer)
     # Display code in expander
     with st.expander("See code"):
         if data_type == "Tabular":
@@ -380,7 +390,7 @@ io.save_explainer(explainer, save_path)
         )
         if uploaded_explainer:
 
-            my_explainer = pkl.load(uploaded_explainer)
+            my_simplex_explainer = pkl.load(uploaded_explainer)
 
         baseline_box_col1, slider_col, *other_cols = st.columns(5)
         with baseline_box_col1:
@@ -404,17 +414,20 @@ io.save_explainer(explainer, save_path)
             test_example_id = st.slider(
                 "Test record:",
                 0,
-                my_explainer.explain_inputs.shape[0] - 1,
+                my_simplex_explainer.explain_inputs.shape[0] - 1,
                 0,
                 key="tabular_explainer_slider",
             )
 
         if uploaded_explainer:
-            my_explainer.explain(
+            my_simplex_explainer.explain(
                 test_example_id, baseline=baseline, constant_val=constant_val
             )
             try:
-                explain_record_df, display_corpus_df = my_explainer.summary_plot(
+                (
+                    explain_record_df,
+                    display_corpus_df,
+                ) = my_simplex_explainer.summary_plot(
                     output_file_prefix="my_output",
                     open_in_browser=False,
                     return_type="styled_df",
@@ -457,15 +470,15 @@ io.save_explainer(explainer, save_path)
             test_example_id = st.slider(
                 "Test record:",
                 0,
-                my_explainer.explain_inputs.shape[0] - 1,
+                my_simplex_explainer.explain_inputs.shape[0] - 1,
                 0,
                 key="time_explainer_slider",
             )
 
         if uploaded_explainer:
 
-            my_explainer = pkl.load(uploaded_explainer)
-            my_explainer.explain(
+            my_simplex_explainer = pkl.load(uploaded_explainer)
+            my_simplex_explainer.explain(
                 test_example_id, baseline=baseline, constant_val=constant_val
             )
-            write_time_series_explaination_to_app(my_explainer)
+            write_time_series_explaination_to_app(my_simplex_explainer)

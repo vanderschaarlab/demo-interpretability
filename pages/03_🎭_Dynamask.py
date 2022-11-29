@@ -52,17 +52,17 @@ with preloaded_tab:
             "Engine Noise": "resources/saved_explainers/dynamask/forda_conv_dynamask_explainer_4.p",
         },
     }
-    my_explainer = io.load_explainer(dynamask_paths[model][dataset])
+    my_dynamask_explainer = io.load_explainer(dynamask_paths[model][dataset])
 
     # Test examples to fit
     explain_id = st.slider(
         "Test record:",
         0,
-        my_explainer.all_data.shape[0] - 1,
+        my_dynamask_explainer.all_data.shape[0] - 1,
         0,
         key="explain_id_slider_preload",
     )
-    refit(my_explainer, explain_id)
+    refit(my_dynamask_explainer, explain_id)
 
     # Parameters for explain
     slider_col1, slider_col2, *other_cols = st.columns(4)
@@ -70,23 +70,23 @@ with preloaded_tab:
         features_displayed_start, features_displayed_stop = st.slider(
             "Features Displayed:",
             0,
-            my_explainer.explain_data.shape[1],
-            (0, my_explainer.explain_data.shape[1]),
+            my_dynamask_explainer.explain_data.shape[1],
+            (0, my_dynamask_explainer.explain_data.shape[1]),
             key="features_displayed_slider_preload",
         )
     with slider_col2:
         times_displayed_start, times_displayed_stop = st.slider(
             "Time steps Displayed:",
             0,
-            my_explainer.explain_data.shape[0],
-            (0, my_explainer.explain_data.shape[0]),
+            my_dynamask_explainer.explain_data.shape[0],
+            (0, my_dynamask_explainer.explain_data.shape[0]),
             key="times_displayed_slider_preload",
         )
     smooth_mask = st.checkbox(
         "Smooth the mask", value=False, key="smooth_mask_checkbox_preload"
     )
 
-    my_explainer.explain(
+    my_dynamask_explainer.explain(
         ids_feature=list(range(features_displayed_start, features_displayed_stop)),
         ids_time=list(range(times_displayed_start, times_displayed_stop)),
         smooth=smooth_mask,
@@ -94,8 +94,8 @@ with preloaded_tab:
         extremal_mask_threshold=0.01,
     )
 
-    my_explainer.summary_plot(
-        my_explainer.explanation,
+    my_dynamask_explainer.summary_plot(
+        my_dynamask_explainer.explanation,
         show=False,
         save_path="resources/saved_explainers/dynamask/temp_dynamask_plot.png",
     )
@@ -107,45 +107,45 @@ with preloaded_tab:
 with upload_tab:
 
     uploaded_explainer = st.file_uploader(
-        "Upload explainer:", key="tabular_explainer_uploader"
+        "Upload explainer:", key="dynamask_explainer_uploader"
     )
     if uploaded_explainer is not None:
         # Load the explainer
-        my_explainer = pkl.load(uploaded_explainer)
+        my_dynamask_explainer = pkl.load(uploaded_explainer)
 
         # Test examples to fit
         explain_id = st.slider(
             "Test record:",
             0,
-            my_explainer.all_data.shape[0],
+            my_dynamask_explainer.all_data.shape[0],
             0,
             key="explain_id_slider_upload",
         )
 
-        refit(my_explainer, explain_id)
+        refit(my_dynamask_explainer, explain_id)
         # Parameters for explain
         slider_col1, slider_col2, *other_cols = st.columns(4)
         with slider_col1:
             features_displayed = st.slider(
                 "Features Displayed:",
                 0,
-                my_explainer.explain_data.shape[1],
-                my_explainer.explain_data.shape[1],
+                my_dynamask_explainer.explain_data.shape[1],
+                my_dynamask_explainer.explain_data.shape[1],
                 key="features_displayed_slider_upload",
             )
         with slider_col2:
             times_displayed = st.slider(
                 "Time steps Displayed:",
                 0,
-                my_explainer.explain_data.shape[0],
-                my_explainer.explain_data.shape[0],
+                my_dynamask_explainer.explain_data.shape[0],
+                my_dynamask_explainer.explain_data.shape[0],
                 key="times_displayed_slider_upload",
             )
         smooth_mask = st.checkbox(
             "Smooth the mask", value=False, key="smooth_mask_checkbox_upload"
         )
 
-        my_explainer.explain(
+        my_dynamask_explainer.explain(
             ids_feature=list(range(features_displayed)),
             ids_time=list(range(times_displayed)),
             smooth=smooth_mask,
@@ -153,8 +153,8 @@ with upload_tab:
             extremal_mask_threshold=0.01,
         )
 
-        my_explainer.summary_plot(
-            my_explainer.explanation,
+        my_dynamask_explainer.summary_plot(
+            my_dynamask_explainer.explanation,
             show=False,
             save_path="resources/saved_explainers/dynamask/temp_dynamask_plot.png",
         )

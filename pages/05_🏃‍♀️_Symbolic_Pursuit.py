@@ -49,11 +49,11 @@ with preloaded_tab:
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer_4.p",
         },  # TODO: Update with new version (needs running)
     }
-    my_explainer = io.load_explainer(sym_pursuit_paths[model][dataset])
+    my_symbolic_pursuit_explainer = io.load_explainer(sym_pursuit_paths[model][dataset])
 
-    my_explainer.explain()
+    my_symbolic_pursuit_explainer.explain()
 
-    str_projections = my_explainer.symbolic_model.string_projections()
+    str_projections = my_symbolic_pursuit_explainer.symbolic_model.string_projections()
     str_projections = re.split(r"\s(?=P\d \=)", str_projections)
     print(str_projections)
 
@@ -61,7 +61,7 @@ with preloaded_tab:
 
     st.write("**Symbolic Expression of the model:**")
     # st.image(temp_expression_output, width=600)
-    st.latex(my_explainer.explanation.expression)
+    st.latex(my_symbolic_pursuit_explainer.explanation.expression)
     st.write("**Projections in the Symbolic Expression:**")
     for projection in str_projections:
         st.write(projection)
@@ -114,18 +114,20 @@ with preloaded_tab:
                 }
             )
 
-    num_features = my_explainer.symbolic_model.dim_x
+    num_features = my_symbolic_pursuit_explainer.symbolic_model.dim_x
     cols = st.columns(num_features)
     for i, col in enumerate(cols):
         with col:
             feature = st.number_input(
-                f"{my_explainer.feature_names[i]}",
+                f"{my_symbolic_pursuit_explainer.feature_names[i]}",
                 value=median_values[i],
-                key=f"{my_explainer.feature_names[i]}_input_val_preloaded",
+                key=f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_preloaded",
             )  # Feature_names must be passed to the explainer to be used in this interface
     inputs_to_predict = np.array(
         [
-            st.session_state[f"{my_explainer.feature_names[i]}_input_val_preloaded"]
+            st.session_state[
+                f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_preloaded"
+            ]
             for i in range(num_features)
         ]
     ).reshape(1, num_features)
@@ -135,7 +137,9 @@ with preloaded_tab:
     inputs_to_predict = scaler.transform(inputs_to_predict)
 
     st.write("Output:")
-    st.write(f"{my_explainer.symbolic_model.predict(inputs_to_predict).item(0)}")
+    st.write(
+        f"{my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}"
+    )
     if dataset == "diabetes":
         st.write(
             "This output value is a quantitative measure of disease progression one year after baseline. The minimum value in the dataset is 25.0. The maximum value in the dataset is 346.0"
@@ -145,46 +149,52 @@ with preloaded_tab:
 with upload_tab:
 
     uploaded_explainer = st.file_uploader(
-        "Upload explainer:", key="tabular_explainer_uploader"
+        "Upload explainer:", key="symbolic_pursuit_explainer_uploader"
     )
     if uploaded_explainer:
 
         # Load the explainer
-        my_explainer = pkl.load(uploaded_explainer)
-        my_explainer.explain()
+        my_symbolic_pursuit_explainer = pkl.load(uploaded_explainer)
+        my_symbolic_pursuit_explainer.explain()
 
-        str_projections = my_explainer.symbolic_model.string_projections()
+        str_projections = (
+            my_symbolic_pursuit_explainer.symbolic_model.string_projections()
+        )
         str_projections = re.split(r"\s(?=P\d \=)", str_projections)
         print(str_projections)
 
         st.write("### Symbolic Pursuit Output")
 
         st.write("**Symbolic Expression of the model:**")
-        st.latex(my_explainer.explanation.expression)
+        st.latex(my_symbolic_pursuit_explainer.explanation.expression)
         st.write("**Projections in the Symbolic Expression:**")
         for projection in str_projections:
             st.write(projection)
 
         st.write("### Predict:")
         st.write("Inputs:")
-        num_features = my_explainer.symbolic_model.dim_x
+        num_features = my_symbolic_pursuit_explainer.symbolic_model.dim_x
         cols = st.columns(num_features)
         for i, col in enumerate(cols):
             with col:
                 feature = st.number_input(
-                    f"{my_explainer.feature_names[i]}",
+                    f"{my_symbolic_pursuit_explainer.feature_names[i]}",
                     value=0.0,
-                    key=f"{my_explainer.feature_names[i]}_input_val_uploaded",
+                    key=f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_uploaded",
                 )  # Feature_names must be passed to the explainer to be used in this interface
         inputs_to_predict = np.array(
             [
-                st.session_state[f"{my_explainer.feature_names[i]}_input_val_uploaded"]
+                st.session_state[
+                    f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_uploaded"
+                ]
                 for i in range(num_features)
             ]
         ).reshape(1, num_features)
 
         st.write("Output:")
-        st.write(f"{my_explainer.symbolic_model.predict(inputs_to_predict).item(0)}")
+        st.write(
+            f"{my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}"
+        )
 
 with st.expander("See code"):
     st.write("Implementation of the SymbolicPursuitExplainer.")
