@@ -45,7 +45,14 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
     for i, projection in enumerate(
         my_symbolic_pursuit_explainer.symbolic_model.get_projections()
     ):
-        proj_lines = textwrap.fill(smp.latex(projection), 180)
+        proj_str = smp.latex(projection)
+        coeffs = re.findall(r"\d+\.\d+", proj_str)
+        short_coeffs = [str(round(float(c), 4)) for c in coeffs]
+        coeff_repl = zip(coeffs, short_coeffs)
+        for c, s_c in coeff_repl:
+            proj_str = re.sub(c, s_c, proj_str, count=1)
+        proj_lines = textwrap.fill(proj_str, 180)
+
         for line_idx, p_line in enumerate(proj_lines.split("\n")):
             if line_idx == 0:
                 st.latex(rf"""P_{i+1} = {p_line}""")
@@ -99,7 +106,6 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         st.write(
             "This output value is a quantitative measure of disease progression one year after baseline. The minimum value in the dataset is 25.0. The maximum value in the dataset is 346.0"
         )
-
     st.write("**Feature Importance:**")
     st.write(
         "The following are feature importances for the given input. Changing the imput with the +/- buttons will update the importances."
@@ -114,14 +120,21 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
     st.write(
         "This is the second order Taylor expansion of the learned symbolic expression around the input point given above. The weights against the different pairwise feature products gives an indication of the feature interactions."
     )
-    taylor_expand_lines = textwrap.fill(
-        smp.latex(
-            smp.expand(
-                my_symbolic_pursuit_explainer.symbolic_model.get_taylor(
-                    inputs_to_predict.reshape(num_features), 2
-                )
+    taylor_expand_str = smp.latex(
+        smp.expand(
+            my_symbolic_pursuit_explainer.symbolic_model.get_taylor(
+                inputs_to_predict.reshape(num_features), 2
             )
-        ),
+        )
+    )
+    coeffs = re.findall(r"\d+\.\d+", taylor_expand_str)
+    short_coeffs = [str(round(float(c), 2)) for c in coeffs]
+    coeff_repl = zip(coeffs, short_coeffs)
+    for c, s_c in coeff_repl:
+        taylor_expand_str = re.sub(c, s_c, taylor_expand_str, count=1)
+
+    taylor_expand_lines = textwrap.fill(
+        taylor_expand_str,
         180,
     )
     for line_idx, t_line in enumerate(taylor_expand_lines.split("\n")):
