@@ -3,11 +3,14 @@
 import sys
 import re
 import os
+
+# Third party
 import streamlit as st
 import numpy as np
 import dill as pkl
 import sympy as smp
 import textwrap
+import torch
 
 # Interpretability
 from interpretability.interpretability_models.utils import data, io
@@ -73,9 +76,24 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         scaler = pkl.load(f)
     inputs_to_predict = scaler.transform(inputs_to_predict)
 
-    st.write("**Prediction:**")
+    st.write("**Predictions:**")
     st.write(
-        f"{my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}"
+        f"""
+        Symbolic Model Prediction: {my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}
+    """
+    )
+    try:
+        predictive_model_pred = my_symbolic_pursuit_explainer.model(
+            inputs_to_predict
+        ).item(0)
+    except:
+        predictive_model_pred = my_symbolic_pursuit_explainer.model(
+            torch.Tensor(inputs_to_predict)
+        ).item(0)
+    st.write(
+        f"""
+        Predictive Model Prediction: {predictive_model_pred}
+    """
     )
     if dataset == "diabetes":
         st.write(
@@ -130,7 +148,7 @@ with preloaded_tab:
     with select_box_col2:
         model_options = ["Random Forrest", "Multi-Layer Perceptron", "Linear"]
         model = st.selectbox(
-            label="Model:",
+            label="Predictive Model:",
             options=model_options,
             key="model_select_preload",
         )
@@ -143,7 +161,7 @@ with preloaded_tab:
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer_6.p",
         },
         "Multi-Layer Perceptron": {
-            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_pytorch_mlp_explainer_6.p",
+            "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_mlp_explainer_7.p",
         },
     }
     loaded_symbolic_pursuit_explainer = io.load_explainer(
