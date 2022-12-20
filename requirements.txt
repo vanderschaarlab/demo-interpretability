@@ -2,10 +2,10 @@
 git+https://github.com/vanderschaarlab/Interpretability@interpretability_suite_app # Replace with PYPI name when published
 
 # # Interpretability methods
-dynamask>=0.0.1
-# shap>=0.41.0
-# simplexai>=0.0.2
-# symbolic-pursuit>=0.0.1
+dynamask==0.0.1
+shap==0.41.0
+simplexai==0.0.2
+symbolic-pursuit==0.0.1
 
 # Other packages
 beautifulsoup4==4.11.1
@@ -23,7 +23,7 @@ sktime==0.13.2
 streamlit-extras>=0.1.5
 sympy==1.6.2
 tensorflow==2.10.0
-termcolor>=2.0.1
+termcolor==2.0.1
 torch==1.12.1
 torchvision==0.13.1
 tqdm==4.64.1

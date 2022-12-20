@@ -3,6 +3,7 @@
 import sys
 import re
 import os
+import math
 
 # Third party
 import streamlit as st
@@ -11,6 +12,11 @@ import dill as pkl
 import sympy as smp
 import textwrap
 import torch
+import itertools
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import seaborn as sns
 
 # Interpretability
 from interpretability.interpretability_models.utils import data, io
@@ -23,15 +29,73 @@ st.set_page_config(
 
 
 def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
-    st.write("### Symbolic Pursuit Output")
-    st.write(
-        "The symbolic model has approximated the model with the following expression. This expression includes the projections which has weights associated with each of the features."
-    )
+    def round_coefficients_in_str_expression(str_expression, decimal_places):
+        coeffs = re.findall(r"\d+\.\d{4,15}", str_expression)
+        short_coeffs = [str(round(float(c), decimal_places)) for c in coeffs]
+        coeff_repl = zip(coeffs, short_coeffs)
+        for c, s_c in coeff_repl:
+            str_expression = re.sub(c, s_c, str_expression, count=1)
+        return str_expression
 
-    st.write("**Symbolic Expression of the model:**")
+    def df_values_to_colors(df):
+        """Gets color values based in values relative to all other values in df."""
+        min_val = np.nanmin(df.values)
+        max_val = np.nanmax(df.values)
+
+        for col in df:
+            # map values to colors in hex via
+            # creating a hex Look up table table and apply the normalized data to it
+            norm = mcolors.Normalize(
+                vmin=min_val,
+                vmax=max_val,
+                clip=True,
+            )
+            lut = plt.cm.bwr(np.linspace(0.2, 0.75, 256))
+            lut = np.apply_along_axis(mcolors.to_hex, 1, lut)
+            a = (norm(df[col].values) * 255).astype(np.int16)
+            df[col] = lut[a]
+        return df
+
+    def highlight(x):
+        return pd.DataFrame(
+            importance_df_colors.values, index=x.index, columns=x.columns
+        )
+
+    def create_coefficient_heatmap_from_second_order_taylor_expansion(
+        expression, feature_names
+    ):
+        expression = smp.Poly(expression)
+        symbols = list(expression.free_symbols)
+        symbol_pairs = itertools.product(symbols, repeat=2)
+        coeffs_dict = {}
+        for s_p in symbol_pairs:
+            coeffs_dict[f"{s_p[0]}{s_p[1]}"] = expression.coeff_monomial(
+                s_p[0] * s_p[1]
+            )
+        coeffs_dict = dict(sorted(coeffs_dict.items()))
+        coeffs_dict_reoriented = {}
+        for i in range(num_features):
+            coeffs_dict_reoriented[f"{feature_names[i]}"] = [
+                float(coeffs_dict[f"X{i}X{j}"]) for j in range(num_features)
+            ]
+        coeffs = pd.DataFrame(data=coeffs_dict_reoriented, index=feature_names)
+        mask = np.triu(coeffs)
+        # np.fill_diagonal(mask, 0)
+        figure = sns.heatmap(
+            coeffs, annot=True, mask=mask, fmt=".2f", annot_kws={"fontsize": 4}
+        ).get_figure()
+        st.pyplot(figure)
+
+    st.write("## Symbolic Expression of the model")
+    st.write(
+        "This is the explicit expression that has been learnt through the fitting process. It approximates the predictive model."
+    )
     if suffix == "preloaded":
-        symb_expression_terms = smp.latex(
+        symb_expression_str = smp.latex(
             my_symbolic_pursuit_explainer.explanation.expression
+        )
+        symb_expression_terms = round_coefficients_in_str_expression(
+            symb_expression_str, 3
         ).split("+")
         for i, term in enumerate(symb_expression_terms):
             if i == 0:
@@ -41,30 +105,30 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
     else:
         st.write(my_symbolic_pursuit_explainer.explanation.expression)
 
-    st.write("**Projections in the Symbolic Expression:**")
-    for i, projection in enumerate(
-        my_symbolic_pursuit_explainer.symbolic_model.get_projections()
-    ):
-        proj_str = smp.latex(projection)
-        coeffs = re.findall(r"\d+\.\d+", proj_str)
-        short_coeffs = [str(round(float(c), 4)) for c in coeffs]
-        coeff_repl = zip(coeffs, short_coeffs)
-        for c, s_c in coeff_repl:
-            proj_str = re.sub(c, s_c, proj_str, count=1)
-        proj_lines = textwrap.fill(proj_str, 180)
+    with st.expander("Projections in the Symbolic Expression:"):
+        st.write(
+            "These are the symbolic projections (P₁ to Pₙ) in the expression above."
+        )
+        for i, projection in enumerate(
+            my_symbolic_pursuit_explainer.symbolic_model.get_projections()
+        ):
+            proj_str = smp.latex(projection)
+            proj_str = round_coefficients_in_str_expression(proj_str, 3)
+            proj_lines = textwrap.fill(proj_str, 180)
 
-        for line_idx, p_line in enumerate(proj_lines.split("\n")):
-            if line_idx == 0:
-                st.latex(rf"""P_{i+1} = {p_line}""")
-            else:
-                st.latex(p_line)
+            for line_idx, p_line in enumerate(proj_lines.split("\n")):
+                if line_idx == 0:
+                    st.latex(rf"""P_{i+1} = {p_line}""")
+                else:
+                    st.latex(p_line)
 
-    st.write("### Symbolic Model to Predictions and Feature Importance")
-    st.write("**Inputs:**")
+    st.write("## Symbolic Model to Predictions")
+    st.write("**Inputs**")
     num_features = my_symbolic_pursuit_explainer.symbolic_model.dim_x
+    number_of_feature_cols = 10
     cols = st.columns(num_features)
-    for i, col in enumerate(cols):
-        with col:
+    for i in range(len(cols)):
+        with cols[i % number_of_feature_cols]:
             feature = st.number_input(
                 f"{my_symbolic_pursuit_explainer.feature_names[i]}",
                 value=median_values[i],
@@ -83,7 +147,7 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         scaler = pkl.load(f)
     inputs_to_predict = scaler.transform(inputs_to_predict)
 
-    st.write("**Predictions:**")
+    st.write("**Predictions**")
     st.write(
         f"""
         Symbolic Model Prediction: {my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}
@@ -106,44 +170,64 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         st.write(
             "This output value is a quantitative measure of disease progression one year after baseline. The minimum value in the dataset is 25.0. The maximum value in the dataset is 346.0"
         )
-    st.write("**Feature Importance:**")
+    st.write("## Feature Importance")
     st.write(
         "The following are feature importances for the given input. Changing the imput with the +/- buttons will update the importances."
     )
-    fi_cols = st.columns(num_features)
-    for i, col in enumerate(fi_cols):
-        with col:
-            st.write(
-                f"{my_symbolic_pursuit_explainer.feature_names[i]}: {round(my_symbolic_pursuit_explainer.symbolic_model.get_feature_importance(inputs_to_predict.reshape(num_features))[i], 4)}"
-            )
-    st.write("### Second order Taylor expansion")
-    st.write(
-        "This is the second order Taylor expansion of the learned symbolic expression around the input point given above. The weights against the different pairwise feature products gives an indication of the feature interactions."
+
+    feature_importance_zip = zip(
+        my_symbolic_pursuit_explainer.feature_names,
+        my_symbolic_pursuit_explainer.symbolic_model.get_feature_importance(
+            inputs_to_predict.reshape(num_features)
+        ),
     )
-    taylor_expand_str = smp.latex(
-        smp.expand(
-            my_symbolic_pursuit_explainer.symbolic_model.get_taylor(
-                inputs_to_predict.reshape(num_features), 2
-            )
+    feature_importance_dict = {k: [round(v, 2)] for k, v in feature_importance_zip}
+    feature_importance_df = pd.DataFrame(data=feature_importance_dict)
+
+    importance_df_colors = df_values_to_colors(
+        feature_importance_df.copy(),
+    )
+    importance_df_colors = importance_df_colors.applymap(
+        lambda x: f"background-color: {x}"
+    )
+    table_width = 25
+    if len(feature_importance_df.columns) <= table_width:
+        st.write(feature_importance_df.style.apply(highlight, axis=None))
+    else:
+        feature_importance_dfs = np.array_split(
+            feature_importance_df,
+            math.ceil(len(feature_importance_df.columns) / table_width),
+            axis=1,
+        )
+        for feature_importance_df in feature_importance_dfs:
+            st.write(feature_importance_df)
+
+    st.write("## Feature Interactions")
+    st.write(
+        "This heatmap shows the feature interactions in the symbolic expression. Values with the highest magnitude, positive or negative, show the feature interactions with the largest effect on the predicted value. It is calculated by examining the coefficents in the second order Taylor expansion of the learned symbolic expression around the input point given above."
+    )
+    taylor_expand_expr = smp.expand(
+        my_symbolic_pursuit_explainer.symbolic_model.get_taylor(
+            inputs_to_predict.reshape(num_features), 2
         )
     )
-    coeffs = re.findall(r"\d+\.\d+", taylor_expand_str)
-    short_coeffs = [str(round(float(c), 2)) for c in coeffs]
-    coeff_repl = zip(coeffs, short_coeffs)
-    for c, s_c in coeff_repl:
-        taylor_expand_str = re.sub(c, s_c, taylor_expand_str, count=1)
-
-    taylor_expand_lines = textwrap.fill(
-        taylor_expand_str,
-        180,
+    create_coefficient_heatmap_from_second_order_taylor_expansion(
+        taylor_expand_expr, my_symbolic_pursuit_explainer.feature_names
     )
-    for line_idx, t_line in enumerate(taylor_expand_lines.split("\n")):
-        st.latex(t_line)
+
+    # taylor_expand_str = smp.latex(taylor_expand_expr)
+    # taylor_expand_str = round_coefficients_in_str_expression(taylor_expand_str, 3)
+    # taylor_expand_lines = textwrap.fill(
+    #     taylor_expand_str,
+    #     180,
+    # )
+    # for line_idx, t_line in enumerate(taylor_expand_lines.split("\n")):
+    #     st.latex(t_line)
 
 
 st.write("# Symbolic Pursuit Explainer")
 st.write(
-    "Symbolic Pursuit is an interpretability method, where the Black-Box is approximated by a simple symbolic equation. It is a variation of projection pursuit that allows for global explanations. You can read more about it in the [paper](https://arxiv.org/abs/2011.08596#:~:text=Learning%20outside%20the%20Black%2DBox%3A%20The%20pursuit%20of%20interpretable%20models,-Jonathan%20Crabb%C3%A9%2C%20Yao&text=Machine%20Learning%20has%20proved%20its,difficulties%20of%20interpreting%20these%20models.)."
+    "Symbolic Pursuit is an interpretability method, where the Black-Box is approximated by a closed-form mathematical expression. It is a variation of projection pursuit that allows for global explanations. You can read more about it in the [paper](https://arxiv.org/abs/2011.08596#:~:text=Learning%20outside%20the%20Black%2DBox%3A%20The%20pursuit%20of%20interpretable%20models,-Jonathan%20Crabb%C3%A9%2C%20Yao&text=Machine%20Learning%20has%20proved%20its,difficulties%20of%20interpreting%20these%20models.)."
 )
 
 preloaded_tab, upload_tab = st.tabs(["Examples", "Upload your own Explainer"])
