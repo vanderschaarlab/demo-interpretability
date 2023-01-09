@@ -28,7 +28,9 @@ st.set_page_config(
 )
 
 
-def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
+def render_output(
+    my_symbolic_pursuit_explainer, suffix="preloaded", scale_with_preloaded_scaler=None
+):
     def round_coefficients_in_str_expression(str_expression, decimal_places):
         coeffs = re.findall(r"\d+\.\d{4,15}", str_expression)
         short_coeffs = [str(round(float(c), decimal_places)) for c in coeffs]
@@ -80,7 +82,10 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
             ]
         coeffs = pd.DataFrame(data=coeffs_dict_reoriented, index=feature_names)
         mask = np.triu(coeffs)
-        # np.fill_diagonal(mask, 0)
+        np.fill_diagonal(
+            mask, 0
+        )  # show main diagonal, to allow comparison of the interaction importances to the features alone
+        plt.clf()
         figure = sns.heatmap(
             coeffs, annot=True, mask=mask, fmt=".2f", annot_kws={"fontsize": 4}
         ).get_figure()
@@ -90,20 +95,17 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
     st.write(
         "This is the explicit expression that has been learnt through the fitting process. It approximates the predictive model."
     )
-    if suffix == "preloaded":
-        symb_expression_str = smp.latex(
-            my_symbolic_pursuit_explainer.explanation.expression
-        )
-        symb_expression_terms = round_coefficients_in_str_expression(
-            symb_expression_str, 3
-        ).split("+")
-        for i, term in enumerate(symb_expression_terms):
-            if i == 0:
-                st.latex(term)
-            else:
-                st.latex("+ " + term)
-    else:
-        st.write(my_symbolic_pursuit_explainer.explanation.expression)
+    symb_expression_str = smp.latex(
+        my_symbolic_pursuit_explainer.explanation.expression
+    )
+    symb_expression_terms = round_coefficients_in_str_expression(
+        symb_expression_str, 3
+    ).split("+")
+    for i, term in enumerate(symb_expression_terms):
+        if i == 0:
+            st.latex(term)
+        else:
+            st.latex("+ " + term)
 
     with st.expander("Projections in the Symbolic Expression:"):
         st.write(
@@ -129,11 +131,19 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
     cols = st.columns(num_features)
     for i in range(len(cols)):
         with cols[i % number_of_feature_cols]:
-            feature = st.number_input(
-                f"{my_symbolic_pursuit_explainer.feature_names[i]}",
-                value=median_values[i],
-                key=f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_{suffix}",
-            )  # Feature_names must be passed to the explainer to be used in this interface
+            if suffix == "preloaded":
+                feature = st.number_input(
+                    f"{my_symbolic_pursuit_explainer.feature_names[i]}",
+                    value=median_values[i],
+                    key=f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_{suffix}",
+                )  # Feature_names must be passed to the explainer to be used in this interface
+            if suffix == "uploaded":
+                feature = st.number_input(
+                    f"{my_symbolic_pursuit_explainer.feature_names[i]}",
+                    value=0.0,
+                    key=f"{my_symbolic_pursuit_explainer.feature_names[i]}_input_val_{suffix}",
+                )  # no median values known for uploaded explainer, so default to 0
+
     inputs_to_predict = np.array(
         [
             st.session_state[
@@ -143,16 +153,24 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         ]
     ).reshape(1, num_features)
 
-    with open(f"resources/data_scalers/{dataset}_scaler.p", "rb") as f:
-        scaler = pkl.load(f)
-    inputs_to_predict = scaler.transform(inputs_to_predict)
+    if scale_with_preloaded_scaler:
+        with open(f"resources/data_scalers/{dataset}_scaler.p", "rb") as f:
+            scaler = pkl.load(f)
+        inputs_to_predict = scaler.transform(inputs_to_predict)
 
     st.write("**Predictions**")
-    st.write(
-        f"""
-        Symbolic Model Prediction: {my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0)}
-    """
-    )
+    if dataset == "iris":
+        st.write(
+            f"""
+            Symbolic Model Prediction: {int(round(my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0),0))}
+        """
+        )
+    else:
+        st.write(
+            f"""
+            Symbolic Model Prediction: {round(my_symbolic_pursuit_explainer.symbolic_model.predict(inputs_to_predict).item(0),2)}
+        """
+        )
     try:
         predictive_model_pred = my_symbolic_pursuit_explainer.model(
             inputs_to_predict
@@ -163,7 +181,7 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
         ).item(0)
     st.write(
         f"""
-        Predictive Model Prediction: {predictive_model_pred}
+        Predictive Model Prediction: {round(predictive_model_pred, 4)}
     """
     )
     if dataset == "diabetes":
@@ -181,7 +199,9 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
             inputs_to_predict.reshape(num_features)
         ),
     )
-    feature_importance_dict = {k: [round(v, 2)] for k, v in feature_importance_zip}
+    feature_importance_dict = {
+        k: [round(float(v), 2)] for k, v in feature_importance_zip
+    }
     feature_importance_df = pd.DataFrame(data=feature_importance_dict)
 
     importance_df_colors = df_values_to_colors(
@@ -211,20 +231,15 @@ def render_output(my_symbolic_pursuit_explainer, suffix="preloaded"):
             inputs_to_predict.reshape(num_features), 2
         )
     )
-    create_coefficient_heatmap_from_second_order_taylor_expansion(
-        taylor_expand_expr, my_symbolic_pursuit_explainer.feature_names
-    )
-
-    # taylor_expand_str = smp.latex(taylor_expand_expr)
-    # taylor_expand_str = round_coefficients_in_str_expression(taylor_expand_str, 3)
-    # taylor_expand_lines = textwrap.fill(
-    #     taylor_expand_str,
-    #     180,
-    # )
-    # for line_idx, t_line in enumerate(taylor_expand_lines.split("\n")):
-    #     st.latex(t_line)
+    try:
+        create_coefficient_heatmap_from_second_order_taylor_expansion(
+            taylor_expand_expr, my_symbolic_pursuit_explainer.feature_names
+        )
+    except:
+        st.write("Please ensure that you have selected valid inputs.")
 
 
+### Main
 st.write("# Symbolic Pursuit Explainer")
 st.write(
     "Symbolic Pursuit is an interpretability method, where the Black-Box is approximated by a closed-form mathematical expression. It is a variation of projection pursuit that allows for global explanations. You can read more about it in the [paper](https://arxiv.org/abs/2011.08596#:~:text=Learning%20outside%20the%20Black%2DBox%3A%20The%20pursuit%20of%20interpretable%20models,-Jonathan%20Crabb%C3%A9%2C%20Yao&text=Machine%20Learning%20has%20proved%20its,difficulties%20of%20interpreting%20these%20models.)."
@@ -236,7 +251,7 @@ with preloaded_tab:
     # Select boxes to choose explainer
     select_box_col1, select_box_col2, *other_cols = st.columns(5)
     with select_box_col1:
-        dataset_options = ["diabetes"]
+        dataset_options = ["iris", "diabetes"]
         dataset = st.selectbox(
             label="Dataset:",
             options=dataset_options,
@@ -253,12 +268,15 @@ with preloaded_tab:
     sym_pursuit_paths = {
         "Random Forrest": {
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_random_forrest_explainer.p",
+            "iris": "resources/saved_explainers/symbolic_pursuit/iris_sklearn_random_forrest_explainer_regression.p",
         },
         "Linear": {
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_linear_explainer_6.p",
+            "iris": "resources/saved_explainers/symbolic_pursuit/iris_sklearn_linear_explainer_regression.p",
         },
         "Multi-Layer Perceptron": {
             "diabetes": "resources/saved_explainers/symbolic_pursuit/diabetes_sklearn_mlp_explainer_7.p",
+            "iris": "resources/saved_explainers/symbolic_pursuit/iris_sklearn_mlp_explainer_regression.p",
         },
     }
     loaded_symbolic_pursuit_explainer = io.load_explainer(
@@ -269,6 +287,7 @@ with preloaded_tab:
 
     if dataset == "diabetes":
         median_values = [50, 1, 25.7, 93, 186, 113, 48, 4, 4.62, 91]
+        scale_with_preloaded_scaler = True
         with st.expander("Explanation of diabetes data:"):
             st.table(
                 data={
@@ -311,8 +330,36 @@ with preloaded_tab:
                     "median values": median_values,
                 }
             )
+    elif dataset == "iris":
+        median_values = [5.8, 3.0, 4.35, 1.3]
+        scale_with_preloaded_scaler = False
+        with st.expander("Explanation of iris data:"):
+            st.write(
+                "This is a classification task with the possible output classes of 1, 2, or 3."
+            )
+            st.table(
+                data={
+                    "Feature name": [
+                        "sepal length (cm)",
+                        "sepal width (cm)",
+                        "petal length (cm)",
+                        "petal width (cm)",
+                    ],
+                    "[min, max] value in dataset": [
+                        "[4.3, 7.9]",
+                        "[2.0, 4.4]",
+                        "[1.0, 6.9]",
+                        "[0.1, 2.5]",
+                    ],
+                    "median values": median_values,
+                }
+            )
 
-    render_output(loaded_symbolic_pursuit_explainer, suffix="preloaded")
+    render_output(
+        loaded_symbolic_pursuit_explainer,
+        suffix="preloaded",
+        scale_with_preloaded_scaler=scale_with_preloaded_scaler,
+    )
 
 with upload_tab:
 
