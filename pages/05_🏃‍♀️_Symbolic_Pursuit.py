@@ -335,7 +335,7 @@ with preloaded_tab:
         scale_with_preloaded_scaler = False
         with st.expander("Explanation of iris data:"):
             st.write(
-                "This is a classification task with the possible output classes of 1, 2, or 3."
+                "This is a classification task with three possible output classes. The task is the identification of species of iris plant, based on petal/sepal measurements."
             )
             st.table(
                 data={
@@ -351,7 +351,7 @@ with preloaded_tab:
                         "[1.0, 6.9]",
                         "[0.1, 2.5]",
                     ],
-                    "median values": median_values,
+                    "median values": [5.8, 3.0, 4.35, 1.3],
                 }
             )
 

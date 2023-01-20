@@ -46,6 +46,23 @@ with preloaded_tab:
             options=model_options,
             key="model_select_preload",
         )
+
+    if dataset == "Engine Noise":
+        with st.expander("Explanation of Engine Noise data:"):
+            st.write(
+                "This is a time series classification task which comprises of audio data of a running engine at 500 time steps. The output is a score of 0 or 1 based on whether or not there is a fault with the engine."
+            )
+            st.table(
+                data={
+                    "Feature name": ["Engine Noise"],
+                    "Time Steps": 500,
+                    "[min, max] value in dataset": [
+                        "[-4.618, 5.059]",
+                    ],
+                    "median values": [0],
+                }
+            )
+
     # Load the explainer
     dynamask_paths = {
         "Convolutional Net": {
@@ -83,7 +100,10 @@ with preloaded_tab:
             key="times_displayed_slider_preload",
         )
     smooth_mask = st.checkbox(
-        "Smooth the mask", value=False, key="smooth_mask_checkbox_preload"
+        "Smooth the mask",
+        value=False,
+        key="smooth_mask_checkbox_preload",
+        help="This smooths the mask tensor by applying a temporal Gaussian filter for each feature.",
     )
 
     my_dynamask_explainer.explain(
