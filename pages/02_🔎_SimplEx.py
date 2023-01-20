@@ -21,7 +21,7 @@ st.set_page_config(
 
 # Demo util functions
 def write_time_series_explaination_to_app(
-    my_simplex_explainer, time_steps_to_display=7
+    my_simplex_explainer, test_example_id, time_steps_to_display=7
 ):
     def highlight(x):
         return pd.DataFrame(
@@ -63,6 +63,9 @@ def write_time_series_explaination_to_app(
     )
     # Write test record to app
     st.write("### Test Record")
+    st.write(
+        f"Test Prediction: {my_simplex_explainer.explain_predictions[test_example_id].item()}  |  Test Label: {my_simplex_explainer.explain_targets[test_example_id].item()}"
+    )
     st.write(test_record_df.transpose())
     st.write("### Corpus")
 
@@ -189,7 +192,7 @@ def write_time_series_explaination_to_app(
         with corpus_cols[example_i % 2]:
             st.write(f"Corpus Example: {example_i}")
             st.write(
-                f"Example Importance: {100 * corpus_data[example_i]['Example Importance']:0.2f}%"
+                f"Example Importance: {100 * corpus_data[example_i]['Example Importance']:0.2f}%  |  Example Prediction: {int(corpus_data[example_i]['Prediction'].item())}  |  Example Label: {int(corpus_data[example_i]['Label'])}"
             )
             st.write(display_corpus_df)
 
@@ -198,10 +201,10 @@ def write_time_series_explaination_to_app(
 st.write("# SimplEx")
 st.write(
     """
-SimplEx is a case-based interpretability method. It can work with either tabular or time series data. You can read more about it in the [paper](https://papers.nips.cc/paper/2021/hash/65658fde58ab3c2b6e5132a39fae7cb9-Abstract.html).
+SimplEx is an example-based interpretability method. It can work with any type of data as long as the latent representations of the data are available from the model. It can therefore be used for both tabular and time series data. You can read more about it in the [paper](https://papers.nips.cc/paper/2021/hash/65658fde58ab3c2b6e5132a39fae7cb9-Abstract.html).
 
 For clinically focussed examples go to the bespoke [SimplEx Demonstrator](https://vanderschaarlab-demo-simplex-simplexdemoapp-rjaur5.streamlitapp.com/). 
-And for further information, [here](https://youtu.be/it-nfwPt4B8?t=6512) is a video demonstration of the clinical SimplEx app.
+For further information, [here](https://youtu.be/it-nfwPt4B8?t=6512) is a video demonstration of the clinical SimplEx app.
 """
 )
 
@@ -234,11 +237,109 @@ with preloaded_tab:
             key="model_select",
         )
 
+    if dataset == "iris":
+        with st.expander("Explanation of iris data:"):
+            st.write(
+                "This is a classification task with three possible output classes. The task is the identification of species of iris plant, based on petal/sepal measurements."
+            )
+            st.table(
+                data={
+                    "Feature name": [
+                        "sepal length (cm)",
+                        "sepal width (cm)",
+                        "petal length (cm)",
+                        "petal width (cm)",
+                    ],
+                    "[min, max] value in dataset": [
+                        "[4.3, 7.9]",
+                        "[2.0, 4.4]",
+                        "[1.0, 6.9]",
+                        "[0.1, 2.5]",
+                    ],
+                    "median values": [5.8, 3.0, 4.35, 1.3],
+                }
+            )
+    elif dataset == "wine":
+        with st.expander("Explanation of wine quality data:"):
+            st.write(
+                "This is a classification task where the output is a score out of 10 for the quality of the wine. The majority of wines have a score between 3 and 9."
+            )
+            st.table(
+                data={
+                    "Feature name": [
+                        "fixed acidity",
+                        "volatile acidity",
+                        "citric acid",
+                        "residual sugar",
+                        "chlorides",
+                        "free sulfur dioxide",
+                        "total sulfur dioxide",
+                        "density",
+                        "pH",
+                        "sulphates",
+                        "alcohol",
+                    ],
+                    "[min, max] value in dataset": [
+                        "[3.8, 15.9]",
+                        "[0.08, 1.58]",
+                        "[0, 1.66]",
+                        "[0.6, 65.8]",
+                        "[0.009, 0.611]",
+                        "[1, 289]",
+                        "[6, 440]",
+                        "[0.987, 1.039]",
+                        "[2.72, 4.01]",
+                        "[0.22, 2]",
+                        "[8, 14.9]",
+                    ],
+                    "median values": [
+                        7,
+                        0.29,
+                        0.31,
+                        3,
+                        0.047,
+                        29,
+                        118,
+                        0.995,
+                        3.21,
+                        0.51,
+                        10.3,
+                    ],
+                }
+            )
+    elif dataset == "Engine Noise":
+        with st.expander("Explanation of Engine Noise data:"):
+            st.write(
+                "This is a time series classification task which comprises of audio data of a running engine at 500 time steps. The output is a score of 0 or 1 based on whether or not there is a fault with the engine."
+            )
+            st.table(
+                data={
+                    "Feature name": ["Engine Noise"],
+                    "Time Steps": 500,
+                    "[min, max] value in dataset": [
+                        "[-4.618, 5.059]",
+                    ],
+                    "median values": [0],
+                }
+            )
+
     slider_col1, slider_col2, *other_slider_col3 = st.columns(3)
     with slider_col1:
         test_example_id = st.slider("Test record:", 0, 20, 0, key="example_test_slider")
+    with slider_col2:
+        example_importance_threshold = st.slider(
+            "Example Importance Threshold:",
+            min_value=0.0,
+            max_value=1.0,
+            step=0.01,
+            value=0.05,
+            key="example_importance_threshold_slider",
+            help="Changing the example importance threshold will change the colours in the corpus breakdown, as they compare feature importances in the viewed corpus.",
+        )
 
     # SimplEx
+
+    # Define dictrionary of saved_explainer paths
     if data_type == "Tabular":
         simplex_paths = {
             "MLP": {
@@ -259,6 +360,8 @@ with preloaded_tab:
                 "Engine Noise": "resources/saved_explainers/simplex/temporal/forda_gru_time_simplex_explainer.p",
             },  # TODO: Train this model and save the explainer before implementing
         }
+
+    # Load the Explainer
     my_simplex_explainer = io.load_explainer(simplex_paths[model][dataset])
 
     my_simplex_explainer.explain(test_example_id, baseline="median")
@@ -268,6 +371,7 @@ with preloaded_tab:
             output_file_prefix="my_output",
             open_in_browser=False,
             return_type="styled_df",
+            example_importance_threshold=example_importance_threshold,
         )
         for col in explain_record_df.columns:
             if col not in ["Test Prediction", "Test Label"]:
@@ -278,7 +382,7 @@ with preloaded_tab:
         st.write(display_corpus_df)
 
     elif data_type == "Time Series":
-        write_time_series_explaination_to_app(my_simplex_explainer)
+        write_time_series_explaination_to_app(my_simplex_explainer, test_example_id)
     # Display code in expander
     with st.expander("See code"):
         if data_type == "Tabular":
@@ -392,7 +496,7 @@ io.save_explainer(explainer, save_path)
 
             my_simplex_explainer = pkl.load(uploaded_explainer)
 
-        baseline_box_col1, slider_col, *other_cols = st.columns(5)
+        baseline_box_col1, slider_col, slider_col2, *other_cols = st.columns(5)
         with baseline_box_col1:
             baseline = st.selectbox(
                 label="Baseline:",
@@ -418,6 +522,16 @@ io.save_explainer(explainer, save_path)
                 0,
                 key="tabular_explainer_slider",
             )
+        with slider_col2:
+            example_importance_threshold = st.slider(
+                "Example Importance Threshold:",
+                min_value=0.0,
+                max_value=1.0,
+                step=0.01,
+                value=0.05,
+                key="upload_example_importance_threshold_slider",
+                help="Changing the example importance threshold will change the colours in the corpus breakdown, as they compare feature importances in the viewed corpus.",
+            )
 
         if uploaded_explainer:
             my_simplex_explainer.explain(
@@ -432,6 +546,7 @@ io.save_explainer(explainer, save_path)
                     open_in_browser=False,
                     return_type="styled_df",
                     output_html=False,
+                    example_importance_threshold=example_importance_threshold,
                 )
                 for col in explain_record_df.columns:
                     if col not in ["Test Prediction", "Test Label"]:
@@ -481,4 +596,4 @@ io.save_explainer(explainer, save_path)
             my_simplex_explainer.explain(
                 test_example_id, baseline=baseline, constant_val=constant_val
             )
-            write_time_series_explaination_to_app(my_simplex_explainer)
+            write_time_series_explaination_to_app(my_simplex_explainer, test_example_id)

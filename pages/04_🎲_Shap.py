@@ -18,16 +18,18 @@ st.set_page_config(
     layout="wide",
 )
 st.write("# Shap")
-st.write("Shap is a method for various model types.")
+st.write(
+    'Shap uses "Shapley values" to indicate relative feature importance. It is a widely used approach derived from cooperative game theory that was developed externally from the lab. Shap is compatible with many different model types.'
+)
 
 preloaded_tab, upload_tab = st.tabs(["Examples", "Upload your own Explainer"])
 with preloaded_tab:
-    # Select simplEx data type, dataset, and model
+    # Select data type, dataset, and model
     select_box_col1, select_box_col2, select_box_col3, *other_cols = st.columns(5)
     with select_box_col1:
         model_type = st.selectbox(
-            label="Data type:",
-            options=["Kernel", "Linear", "Tree", "Deep"],
+            label="Model type:",
+            options=["Linear", "Tree", "Deep", "Kernel"],
             key="model_type_select",
         )
     with select_box_col2:
@@ -39,6 +41,76 @@ with preloaded_tab:
             options=dataset_options,
             key="dataset_select",
         )
+    if dataset == "iris":
+        with st.expander("Explanation of iris data:"):
+            st.write(
+                "This is a classification task with three possible output classes. The task is the identification of species of iris plant, based on petal/sepal measurements."
+            )
+            st.table(
+                data={
+                    "Feature name": [
+                        "sepal length (cm)",
+                        "sepal width (cm)",
+                        "petal length (cm)",
+                        "petal width (cm)",
+                    ],
+                    "[min, max] value in dataset": [
+                        "[4.3, 7.9]",
+                        "[2.0, 4.4]",
+                        "[1.0, 6.9]",
+                        "[0.1, 2.5]",
+                    ],
+                    "median values": [5.8, 3.0, 4.35, 1.3],
+                }
+            )
+    if dataset == "wine":
+        with st.expander("Explanation of wine quality data:"):
+            st.write(
+                "This is a classification task where the output is a score out of 10 for the quality of the wine. The majority of wines have a score between 3 and 9."
+            )
+            st.table(
+                data={
+                    "Feature name": [
+                        "fixed acidity",
+                        "volatile acidity",
+                        "citric acid",
+                        "residual sugar",
+                        "chlorides",
+                        "free sulfur dioxide",
+                        "total sulfur dioxide",
+                        "density",
+                        "pH",
+                        "sulphates",
+                        "alcohol",
+                    ],
+                    "[min, max] value in dataset": [
+                        "[3.8, 15.9]",
+                        "[0.08, 1.58]",
+                        "[0, 1.66]",
+                        "[0.6, 65.8]",
+                        "[0.009, 0.611]",
+                        "[1, 289]",
+                        "[6, 440]",
+                        "[0.987, 1.039]",
+                        "[2.72, 4.01]",
+                        "[0.22, 2]",
+                        "[8, 14.9]",
+                    ],
+                    "median values": [
+                        7,
+                        0.29,
+                        0.31,
+                        3,
+                        0.047,
+                        29,
+                        118,
+                        0.995,
+                        3.21,
+                        0.51,
+                        10.3,
+                    ],
+                }
+            )
 
     # Shap
     shap_paths = {
