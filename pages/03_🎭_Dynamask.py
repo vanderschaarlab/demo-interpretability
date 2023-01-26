@@ -33,7 +33,7 @@ with preloaded_tab:
     # Select boxes to choose explainer
     select_box_col1, select_box_col2, *other_cols = st.columns(5)
     with select_box_col1:
-        dataset_options = ["Engine Noise"]
+        dataset_options = ["Basic Motions", "Engine Noise"]
         dataset = st.selectbox(
             label="Dataset:",
             options=dataset_options,
@@ -63,10 +63,27 @@ with preloaded_tab:
                 }
             )
 
+    if dataset == "Basic Motions":
+        with st.expander("Explanation of Basic Motions data:"):
+            st.write(
+                "This is an equal length multivariate time series classification problem. It consists of label 4 classes with 80 cases, each with 100 time steps."
+            )
+            st.table(
+                data={
+                    "Feature name": ["Basic Motions"],
+                    "Time Steps": 100,
+                    "[min, max] value in dataset": [
+                        "[27.822042, 34.86621]",
+                    ],
+                    "median values": [0],
+                }
+            )
+
     # Load the explainer
     dynamask_paths = {
         "Convolutional Net": {
             "Engine Noise": "resources/saved_explainers/dynamask/forda_conv_dynamask_explainer_4.p",
+            "Basic Motions": "resources/saved_explainers/dynamask/basic_motions_conv_dynamask_explainer.p",
         },
     }
     my_dynamask_explainer = io.load_explainer(dynamask_paths[model][dataset])
@@ -162,7 +179,10 @@ with upload_tab:
                 key="times_displayed_slider_upload",
             )
         smooth_mask = st.checkbox(
-            "Smooth the mask", value=False, key="smooth_mask_checkbox_upload"
+            "Smooth the mask",
+            value=False,
+            key="smooth_mask_checkbox_upload",
+            help="This smooths the mask tensor by applying a temporal Gaussian filter for each feature.",
         )
 
         my_dynamask_explainer.explain(
@@ -187,31 +207,31 @@ with st.expander("See code"):
     st.write("Implementation of the DynamaskExplainer.")
     st.code(
         """
-    import numpy as np
-    from interpretability_models import dynamask_explainer
+import numpy as np
+from interpretability_models import dynamask_explainer
 
-    # Initialise the explainer
-    my_explainer = dynamask_explainer.DynamaskExplainer(
-        model, "gaussian_blur", group=False
-    )
+# Initialise the explainer
+my_explainer = dynamask_explainer.DynamaskExplainer(
+    model, "gaussian_blur", group=False
+)
 
-    # Fit the explainer
-    my_explainer.fit(
-        X_train[1],
-        loss_function="mse",
-        target=y_train,
-        area_list=np.arange(0.1, 0.5, 0.1),
-    )
-    feature_num, time_step_num = X_train[0].shape
+# Fit the explainer
+my_explainer.fit(
+    X_train[1],
+    loss_function="mse",
+    target=y_train,
+    area_list=np.arange(0.1, 0.5, 0.1),
+)
+feature_num, time_step_num = X_train[0].shape
 
-    # Explain
-    my_explainer.explain(
-        ids_feature=[i for i in range(5)],
-        ids_time=[i for i in range(5)],
-        smooth=False,
-        get_mask_from_group_method="extremal",
-        extremal_mask_threshold=0.01,
-    )
+# Explain
+my_explainer.explain(
+    ids_feature=[i for i in range(5)],
+    ids_time=[i for i in range(5)],
+    smooth=False,
+    get_mask_from_group_method="extremal",
+    extremal_mask_threshold=0.01,
+)
 
     """
     )

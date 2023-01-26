@@ -386,7 +386,7 @@ my_explainer = symbolic_pursuit_explainer.SymbolicPursuitExplainer(
     X_train, # The data used to fit the SymbolicRegressor
     loss_tol=0.1, # The tolerance for the loss under which the pursuit stops. 
     patience=5, # A hard limit on the number of optimisation loops in fit().
-
+)
 
 my_explainer.fit()
 

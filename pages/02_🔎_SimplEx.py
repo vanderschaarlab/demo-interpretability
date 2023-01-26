@@ -389,56 +389,55 @@ with preloaded_tab:
             st.write("### Implementation of the SimplexTabularExplainer")
             st.code(
                 """
-    # Initialize SimplEX, fit it on test examples
-    my_explainer = simplex_explainer.SimplexTabularExplainer(
-        model,
-        X_corpus,
-        y_corpus,
-        feature_names=feature_names,
-        corpus_size=corpus_size,
-    )
-    my_explainer.fit(X_explain, y_explain)
+# Initialize SimplEX, fit it on test examples
+my_explainer = simplex_explainer.SimplexTabularExplainer(
+    model,
+    X_corpus,
+    y_corpus,
+    feature_names=feature_names,
+    corpus_size=corpus_size,
+)
+my_explainer.fit(X_explain, y_explain)
 
-    # Explain 0th test example
-    test_example_idx = 0
-    explanation = my_explainer.explain(
-        test_example_idx,
-        baseline="median",
-    )
+# Explain 0th test example
+test_example_idx = 0
+explanation = my_explainer.explain(
+    test_example_idx,
+    baseline="median",
+)
 
-    # Plot explanation
-    my_explainer.summary_plot(
-        output_file_prefix="my_output",
-        open_in_browser=True,
-    )
-
+# Plot explanation
+my_explainer.summary_plot(
+    output_file_prefix="my_output",
+    open_in_browser=True,
+)
             """
             )
         if data_type == "Time Series":
             st.write("### Implementation of the SimplexTimeSeriesExplainer")
             st.code(
                 """
-    # Initialize SimplEX, fit it on test examples
-    my_explainer = simplex_explainer.SimplexTimeSeriesExplainer(
-        model,
-        X_corpus,
-        y_corpus,
-        corpus_size=corpus_size,
-    )
-    my_explainer.fit(X_explain, y_explain)
+# Initialize SimplEX, fit it on test examples
+my_explainer = simplex_explainer.SimplexTimeSeriesExplainer(
+    model,
+    X_corpus,
+    y_corpus,
+    corpus_size=corpus_size,
+)
+my_explainer.fit(X_explain, y_explain)
 
-    # Explain 0th test example
-    test_example_idx = 0
-    result, sort_order = my_explainer.explain(test_example_idx, baseline="median")
+# Explain 0th test example
+test_example_idx = 0
+result, sort_order = my_explainer.explain(test_example_idx, baseline="median")
 
-    # Plot explanation
-    my_explainer.summary_plot(
-        rescale_dict=rescale_dict,
-        example_importance_threshold=0.15,
-        time_steps_to_display=10,
-        output_file_prefix="my_output",
-        open_in_browser=True,
-    )
+# Plot explanation
+my_explainer.summary_plot(
+    rescale_dict=rescale_dict,
+    example_importance_threshold=0.15,
+    time_steps_to_display=10,
+    output_file_prefix="my_output",
+    open_in_browser=True,
+)
             """
             )
 
