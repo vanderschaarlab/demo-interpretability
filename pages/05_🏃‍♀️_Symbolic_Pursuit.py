@@ -283,7 +283,9 @@ with preloaded_tab:
         sym_pursuit_paths[model][dataset]
     )
 
-    loaded_symbolic_pursuit_explainer.explain()
+    loaded_symbolic_pursuit_explainer.explain(
+        loaded_symbolic_pursuit_explainer.X_explain[0]
+    )
 
     if dataset == "diabetes":
         median_values = [50, 1, 25.7, 93, 186, 113, 48, 4, 4.62, 91]
@@ -370,7 +372,9 @@ with upload_tab:
 
         # Load the explainer
         my_symbolic_pursuit_explainer = pkl.load(uploaded_explainer)
-        my_symbolic_pursuit_explainer.explain()
+        my_symbolic_pursuit_explainer.explain(
+            loaded_symbolic_pursuit_explainer.X_explain[0]
+        )
         render_output(my_symbolic_pursuit_explainer, suffix="uploaded")
 
 
