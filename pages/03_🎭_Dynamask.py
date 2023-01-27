@@ -33,10 +33,7 @@ with preloaded_tab:
     # Select boxes to choose explainer
     select_box_col1, select_box_col2, *other_cols = st.columns(5)
     with select_box_col1:
-        dataset_options = [
-            # "Basic Motions",
-            "Engine Noise"
-        ]
+        dataset_options = ["Basic Motions", "Engine Noise"]
         dataset = st.selectbox(
             label="Dataset:",
             options=dataset_options,
