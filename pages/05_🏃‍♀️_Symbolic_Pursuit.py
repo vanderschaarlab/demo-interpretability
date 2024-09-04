@@ -258,7 +258,8 @@ with preloaded_tab:
             key="dataset_select_preload",
         )
     with select_box_col2:
-        model_options = ["Random Forrest", "Multi-Layer Perceptron", "Linear"]
+        model_options = ["Multi-Layer Perceptron", "Linear"]
+        # model_options = ["Random Forrest", "Multi-Layer Perceptron", "Linear"]
         model = st.selectbox(
             label="Predictive Model:",
             options=model_options,

@@ -29,7 +29,8 @@ with preloaded_tab:
     with select_box_col1:
         model_type = st.selectbox(
             label="Model type:",
-            options=["Linear", "Tree", "Deep", "Kernel"],
+            # options=["Linear", "Tree", "Deep", "Kernel"],
+            options=["Deep", "Kernel"],
             key="model_type_select",
         )
     with select_box_col2:
